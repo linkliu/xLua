@@ -12,9 +12,6 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the 
 // specific language governing permissions and limitations under the License.
 
-#ifndef RAPIDJSON_OSTREAMWRAPPER_H_
-#define RAPIDJSON_OSTREAMWRAPPER_H_
-
 #include "stream.h"
 #include <iosfwd>
 
@@ -77,5 +74,3 @@ RAPIDJSON_DIAG_POP
 #endif
 
 RAPIDJSON_NAMESPACE_END
-
-#endif // RAPIDJSON_OSTREAMWRAPPER_H_

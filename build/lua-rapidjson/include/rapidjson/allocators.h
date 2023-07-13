@@ -52,19 +52,6 @@ concept Allocator {
 \endcode
 */
 
-
-/*! \def RAPIDJSON_ALLOCATOR_DEFAULT_CHUNK_CAPACITY
-    \ingroup RAPIDJSON_CONFIG
-    \brief User-defined kDefaultChunkCapacity definition.
-
-    User can define this as any \c size that is a power of 2.
-*/
-
-#ifndef RAPIDJSON_ALLOCATOR_DEFAULT_CHUNK_CAPACITY
-#define RAPIDJSON_ALLOCATOR_DEFAULT_CHUNK_CAPACITY (64 * 1024)
-#endif
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // CrtAllocator
 
@@ -192,8 +179,7 @@ public:
 
         size = RAPIDJSON_ALIGN(size);
         if (chunkHead_ == 0 || chunkHead_->size + size > chunkHead_->capacity)
-            if (!AddChunk(chunk_capacity_ > size ? chunk_capacity_ : size))
-                return NULL;
+            AddChunk(chunk_capacity_ > size ? chunk_capacity_ : size);
 
         void *buffer = reinterpret_cast<char *>(chunkHead_) + RAPIDJSON_ALIGN(sizeof(ChunkHeader)) + chunkHead_->size;
         chunkHead_->size += size;
@@ -225,13 +211,11 @@ public:
         }
 
         // Realloc process: allocate and copy memory, do not free original buffer.
-        if (void* newBuffer = Malloc(newSize)) {
-            if (originalSize)
-                std::memcpy(newBuffer, originalPtr, originalSize);
-            return newBuffer;
-        }
-        else
-            return NULL;
+        void* newBuffer = Malloc(newSize);
+        RAPIDJSON_ASSERT(newBuffer != 0);   // Do not handle out-of-memory explicitly.
+        if (originalSize)
+            std::memcpy(newBuffer, originalPtr, originalSize);
+        return newBuffer;
     }
 
     //! Frees a memory block (concept Allocator)
@@ -245,23 +229,18 @@ private:
 
     //! Creates a new chunk.
     /*! \param capacity Capacity of the chunk in bytes.
-        \return true if success.
     */
-    bool AddChunk(size_t capacity) {
+    void AddChunk(size_t capacity) {
         if (!baseAllocator_)
-            ownBaseAllocator_ = baseAllocator_ = RAPIDJSON_NEW(BaseAllocator)();
-        if (ChunkHeader* chunk = reinterpret_cast<ChunkHeader*>(baseAllocator_->Malloc(RAPIDJSON_ALIGN(sizeof(ChunkHeader)) + capacity))) {
-            chunk->capacity = capacity;
-            chunk->size = 0;
-            chunk->next = chunkHead_;
-            chunkHead_ =  chunk;
-            return true;
-        }
-        else
-            return false;
+            ownBaseAllocator_ = baseAllocator_ = RAPIDJSON_NEW(BaseAllocator());
+        ChunkHeader* chunk = reinterpret_cast<ChunkHeader*>(baseAllocator_->Malloc(RAPIDJSON_ALIGN(sizeof(ChunkHeader)) + capacity));
+        chunk->capacity = capacity;
+        chunk->size = 0;
+        chunk->next = chunkHead_;
+        chunkHead_ =  chunk;
     }
 
-    static const int kDefaultChunkCapacity = RAPIDJSON_ALLOCATOR_DEFAULT_CHUNK_CAPACITY; //!< Default chunk capacity.
+    static const int kDefaultChunkCapacity = 64 * 1024; //!< Default chunk capacity.
 
     //! Chunk header for perpending to each chunk.
     /*! Chunks are stored as a singly linked list.

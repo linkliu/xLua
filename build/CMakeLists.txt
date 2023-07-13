@@ -8,9 +8,6 @@ cmake_minimum_required(VERSION 3.26.4)
 
 #begin lua-rapidjson
 set (RAPIDJSON_SRC
-    lua-rapidjson/source/Document.cpp
-    lua-rapidjson/source/Schema.cpp
-    lua-rapidjson/source/values.cpp
     lua-rapidjson/source/rapidjson.cpp
 )
 set_property(
